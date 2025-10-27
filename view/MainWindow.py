@@ -1,6 +1,8 @@
+from pydoc import text
 import customtkinter as ctk
 import easyocr
 import mss
+from engine.translator import translate_text
 from view.RegionSelector import RegionSelector
 import queue
 import threading
@@ -74,7 +76,7 @@ class App(ctk.CTk):
         self.root.text_translated.pack(fill="both", expand=True, padx=5, pady=5)
 
         self.verificar_fila()
-    
+
     def atualizar_texto(self, texto, erro_traducao):
         self.root.text_captured.delete("1.0", "end")
         self.root.text_captured.insert("end", texto)
@@ -114,7 +116,6 @@ class App(ctk.CTk):
         self.root.btn_stop.configure(state="disabled")
 
     def worker_ocr_screenshot(self, q):
-        print(f"[Thread {threading.get_ident()}] - Iniciando captura de tela e OCR.")
         while self._running:
             try:
                 with mss.mss() as sct:
@@ -132,13 +133,15 @@ class App(ctk.CTk):
                     img = Image.frombytes("RGB", screenshot.size, screenshot.rgb)
                     byteImg = np.array(img)
 
-                resultado = self.root.reader.readtext(image=byteImg, detail=0, paragraph=True)
+                resultado = self.root.reader.readtext(
+                    image=byteImg, detail=0, paragraph=True
+                )
 
                 if resultado:
                     texto_formatado = "\n".join(resultado)
                     if not q.full():
                         q.put(texto_formatado)
-                
+
                 time.sleep(0.5)
 
             except Exception as e:
@@ -151,8 +154,19 @@ class App(ctk.CTk):
             resultado = self.ocr_queue.get_nowait()
             self.root.text_captured.delete("1.0", "end")
             self.root.text_captured.insert(
-                "0.0", "--- Resultado do OCR ---\n\n" + resultado
+                "0.0",resultado
             )
+            self.root.text_translated.delete("1.0", "end")
+
+            texto_traduzido, erro_traducao = translate_text(
+                resultado, target_lang="PT-BR"
+            )
+            self.root.text_translated.delete("1.0", "end")
+            self.root.text_translated.insert("1.0", texto_traduzido)
+            if erro_traducao:
+                self.root.text_translated.insert(
+                    "erro ao traduzir o texto: {erro_traducao}"
+                )
 
         except queue.Empty:
             pass
