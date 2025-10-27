@@ -1,10 +1,18 @@
+import os
 import deepl
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.getenv("DEEPL_API_KEY")
 
 
 def translate_text(text, target_lang):
+    if not api_key:
+        raise ValueError("Chave da API DeepL não encontrada. Verifique o arquivo .env")
+
     try:
-        deepl_client = deepl.DeepLClient("c8d48173-347f-4722-b2b0-a9bb61e8baa7:fx")
-        result = deepl_client.translate_text(text, target_lang="PT-BR")
+        deepl_client = deepl.DeepLClient(api_key)
+        result = deepl_client.translate_text(text, target_lang=target_lang)
         return result.text, None
     except deepl.DeepLException as e:
         error_msg = f"Erro da API DeepL: {e}"
