@@ -2,7 +2,6 @@ import deepl
 
 
 def translate_text(text, target_lang):
-    print(f"Traduzindo texto: '{text}' para {target_lang}")
     try:
         deepl_client = deepl.DeepLClient("c8d48173-347f-4722-b2b0-a9bb61e8baa7:fx")
         result = deepl_client.translate_text(text, target_lang="PT-BR")
